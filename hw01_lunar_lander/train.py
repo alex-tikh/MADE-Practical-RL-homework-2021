@@ -29,11 +29,11 @@ class DQN:
         self.done_buffer = deque([True for i in range(INITIAL_STEPS)], maxlen=INITIAL_STEPS)
         
         self.model = nn.Sequential(
-            nn.Linear(state_dim, 128)
+            nn.Linear(state_dim, 128),
             nn.ReLU(),
-            nn.Linear(128, 256)
+            nn.Linear(128, 256),
             nn.ReLU(),
-            nn.Linear(256, 64)
+            nn.Linear(256, 64),
             nn.ReLU(),   
             nn.Linear(64, action_dim)
         ).to(self.device)
