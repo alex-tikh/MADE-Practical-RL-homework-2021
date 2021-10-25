@@ -142,7 +142,7 @@ def main(device):
     env = make("LunarLander-v2")
     
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    dqn = DQN(state_dim=env.observation_space.shape[0], action_dim=env.action_space.n)
+    dqn = DQN(state_dim=env.observation_space.shape[0], action_dim=env.action_space.n, device=device)
     eps = 0.1
     state = env.reset()
     
