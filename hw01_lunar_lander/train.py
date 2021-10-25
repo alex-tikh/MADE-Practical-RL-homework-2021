@@ -18,35 +18,97 @@ LEARNING_RATE = 5e-4
 
 
 class DQN:
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, device):
         self.steps = 0 # Do not change
-        self.model = None # Torch model
+        self.device = device
+        
+        self.state_buffer = deque([np.zeros(state_dim) for i in range(INITIAL_STEPS)], maxlen=INITIAL_STEPS)
+        self.next_state_buffer = deque([np.zeros(state_dim) for i in range(INITIAL_STEPS)], maxlen=INITIAL_STEPS)
+        self.action_buffer = deque([0. for i in range(INITIAL_STEPS)], maxlen=INITIAL_STEPS)
+        self.reward_buffer = deque([0. for i in range(INITIAL_STEPS)], maxlen=INITIAL_STEPS)
+        self.done_buffer = deque([True for i in range(INITIAL_STEPS)], maxlen=INITIAL_STEPS)
+        
+        self.model = nn.Sequential(
+            nn.Linear(state_dim, 128)
+            nn.ReLU(),
+            nn.Linear(128, 256)
+            nn.ReLU(),
+            nn.Linear(256, 64)
+            nn.ReLU(),   
+            nn.Linear(64, action_dim)
+        ).to(self.device)
+        
+        self.target_model = copy.deepcopy(self.model)
+        self.optimizer = Adam(self.model.parameters(), LEARNING_RATE)
 
     def consume_transition(self, transition):
         # Add transition to a replay buffer.
         # Hint: use deque with specified maxlen. It will remove old experience automatically.
-        pass
+        state, action, next_state, reward, done = transition
+        self.state_buffer.append(state)
+        self.next_state_buffer.append(next_state)
+        self.action_buffer.append(action)
+        self.reward_buffer.append(reward)
+        self.done_buffer.append(done)
 
     def sample_batch(self):
         # Sample batch from a replay buffer.
         # Hints:
         # 1. Use random.randint
         # 2. Turn your batch into a numpy.array before turning it to a Tensor. It will work faster
-        pass
+        batch_idx = np.random.choice(len(self.state_buffer), BATCH_SIZE, replace=False)
+        
+        torch_state_batch = torch.from_numpy(
+            np.array(self.state_buffer)[batch_idx]
+        ).to(self.device)
+        torch_next_state_batch = torch.from_numpy(
+            np.array(self.snext_tate_buffer)[batch_idx]
+        ).to(self.device)
+        
+        torch_action_batch = torch.from_numpy(
+            np.array(self.action_buffer)[batch_idx]
+        ).reshape(-1, 1).to(self.device)
+        torch_reward_batch = torch.from_numpy(
+            np.array(self.reward_buffer)[batch_idx]
+        ).reshape(-1, 1).to(self.device)
+        torch_done_batch = torch.from_numpy(
+            np.array(self.done_buffer)[batch_idx]
+        ).reshape(-1, 1).to(self.device)
+        
+        return torch_state_batch, torch_action_batch, torch_next_state_batch, torch_reward_batch, torch_done_batch
         
     def train_step(self, batch):
         # Use batch to update DQN's network.
-        pass
+        state, action, next_state, reward, done = batch
+        
+        with torch.no_grad():
+            
+            target_q = self.target_model(next_state)
+            target_q = torch.max(target_q, dim=1).values.reshape(-1,1)
+            target_q[done] = 0
+            target_q = reward + GAMMA * target_q
+        
+        q = self.model(state).gather(1, action)
+        
+        loss = mse_loss(q, target_q)
+        self.optimizer.zero_grad()
+        loss.backward()
+        nn.utils.clip_grad_value_(self.model.parameters(), 5)
+        self.optimizer.step()
+        
         
     def update_target_network(self):
         # Update weights of a target Q-network here. You may use copy.deepcopy to do this or 
         # assign a values of network parameters via PyTorch methods.
-        pass
+        self.target_model.load_state_dict(self.model.state_dict())
 
     def act(self, state, target=False):
         # Compute an action. Do not forget to turn state to a Tensor and then turn an action to a numpy array.
         state = np.array(state)
-        return 0
+        state = torch.tensor(state, device=self.device)
+        with torch.no_grad():
+            pred = self.model(state)
+        return pred.argmax(-1).cpu().numpy()
 
     def update(self, transition):
         # You don't need to change this
@@ -78,6 +140,8 @@ def evaluate_policy(agent, episodes=5):
 
 if __name__ == "__main__":
     env = make("LunarLander-v2")
+    
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     dqn = DQN(state_dim=env.observation_space.shape[0], action_dim=env.action_space.n)
     eps = 0.1
     state = env.reset()
