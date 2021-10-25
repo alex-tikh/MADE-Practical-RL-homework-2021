@@ -62,7 +62,7 @@ class DQN:
             np.array(self.state_buffer)[batch_idx]
         ).to(self.device)
         torch_next_state_batch = torch.from_numpy(
-            np.array(self.snext_tate_buffer)[batch_idx]
+            np.array(self.next_state_buffer)[batch_idx]
         ).to(self.device)
         
         torch_action_batch = torch.from_numpy(
