@@ -138,7 +138,7 @@ def evaluate_policy(agent, episodes=5):
         returns.append(total_reward)
     return returns
 
-if __name__ == "__main__":
+def main(device):
     env = make("LunarLander-v2")
     
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -171,3 +171,7 @@ if __name__ == "__main__":
             rewards = evaluate_policy(dqn, 5)
             print(f"Step: {i+1}, Reward mean: {np.mean(rewards)}, Reward std: {np.std(rewards)}")
             dqn.save()
+
+if __name__ == "__main__":
+    main(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
+    
