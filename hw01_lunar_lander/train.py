@@ -16,6 +16,8 @@ STEPS_PER_TARGET_UPDATE = STEPS_PER_UPDATE * 1000
 BATCH_SIZE = 128
 LEARNING_RATE = 5e-4
 
+SEED = 42
+
 
 class DQN:
     def __init__(self, state_dim, action_dim, device):
@@ -33,9 +35,9 @@ class DQN:
             nn.ReLU(),
             nn.Linear(128, 256),
             nn.ReLU(),
-            nn.Linear(256, 64),
+            nn.Linear(256, 128),
             nn.ReLU(),   
-            nn.Linear(64, action_dim)
+            nn.Linear(128, action_dim)
         ).to(self.device)
         
         self.target_model = copy.deepcopy(self.model)
@@ -142,6 +144,13 @@ def main(device):
     env = make("LunarLander-v2")
     
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    
+    # SEED
+    env.seed(SEED)
+    random.seed(SEED)
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    
     dqn = DQN(state_dim=env.observation_space.shape[0], action_dim=env.action_space.n, device=device)
     eps = 0.1
     state = env.reset()
