@@ -93,7 +93,7 @@ class DQN:
         loss = F.mse_loss(q, target_q)
         self.optimizer.zero_grad()
         loss.backward()
-        nn.utils.clip_grad_value_(self.model.parameters(), 5)
+        # nn.utils.clip_grad_value_(self.model.parameters(), 5)
         self.optimizer.step()
         
         
