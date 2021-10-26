@@ -59,20 +59,20 @@ class DQN:
         batch_idx = np.random.choice(len(self.state_buffer), BATCH_SIZE, replace=False)
         
         torch_state_batch = torch.from_numpy(
-            np.array(self.state_buffer)[batch_idx]
+            np.array(self.state_buffer, dtype=np.float32)[batch_idx]
         ).to(self.device)
         torch_next_state_batch = torch.from_numpy(
-            np.array(self.next_state_buffer)[batch_idx]
+            np.array(self.next_state_buffer, dtype=np.float32)[batch_idx]
         ).to(self.device)
         
         torch_action_batch = torch.from_numpy(
-            np.array(self.action_buffer)[batch_idx]
+            np.array(self.action_buffer, dtype=np.int64)[batch_idx]
         ).reshape(-1, 1).to(self.device)
         torch_reward_batch = torch.from_numpy(
-            np.array(self.reward_buffer)[batch_idx]
+            np.array(self.reward_buffer, dtype=np.float32)[batch_idx]
         ).reshape(-1, 1).to(self.device)
         torch_done_batch = torch.from_numpy(
-            np.array(self.done_buffer)[batch_idx]
+            np.array(self.done_buffer, dtype=np.bool)[batch_idx]
         ).reshape(-1, 1).to(self.device)
         
         return torch_state_batch, torch_action_batch, torch_next_state_batch, torch_reward_batch, torch_done_batch
