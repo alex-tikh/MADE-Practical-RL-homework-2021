@@ -179,7 +179,8 @@ def main(device):
         if (i + 1) % (TRANSITIONS//100) == 0:
             rewards = evaluate_policy(dqn, 5)
             best_mean = -np.inf
-            print(f"Step: {i+1}, Reward mean: {np.mean(rewards)}, Reward std: {np.std(rewards)}")
+            mean_reward = np.mean(rewards)
+            print(f"Step: {i+1}, Reward mean: {mean_reward}, Reward std: {np.std(rewards)}")
             if mean_reward > best_mean and np.std(rewards) < 50:
                 print("New best")
                 dqn.save()
