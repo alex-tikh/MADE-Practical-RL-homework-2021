@@ -17,7 +17,7 @@ BATCH_SIZE = 128
 LEARNING_RATE = 5e-4
 
 SEED = 42
-
+HIDDEN_DIM = 128
 
 class DQN:
     def __init__(self, state_dim, action_dim, device):
@@ -31,13 +31,11 @@ class DQN:
         self.done_buffer = deque([True for i in range(INITIAL_STEPS)], maxlen=INITIAL_STEPS)
         
         self.model = nn.Sequential(
-            nn.Linear(state_dim, 128),
+            nn.Linear(state_dim, 2*HIDDEN_DIM),
             nn.ReLU(),
-            nn.Linear(128, 256),
-            nn.ReLU(),
-            nn.Linear(256, 128),
-            nn.ReLU(),   
-            nn.Linear(128, action_dim)
+            nn.Linear(2*HIDDEN_DIM, HIDDEN_DIM),
+            nn.ReLU(), 
+            nn.Linear(HIDDEN_DIM, action_dim)
         ).to(self.device)
         
         self.target_model = copy.deepcopy(self.model)
@@ -178,14 +176,8 @@ def main(device):
         
         if (i + 1) % (TRANSITIONS//100) == 0:
             rewards = evaluate_policy(dqn, 5)
-            best_mean = -np.inf
-            mean_reward = np.mean(rewards)
-            print(f"Step: {i+1}, Reward mean: {mean_reward}, Reward std: {np.std(rewards)}")
-            if mean_reward > best_mean and np.std(rewards) < 50:
-                print("New best")
-                dqn.save()
-                best_mean = mean_reward
-            # dqn.save()
+            print(f"Step: {i+1}, Reward mean: {np.mean(rewards)}, Reward std: {np.std(rewards)}")
+            dqn.save()
 
 if __name__ == "__main__":
     main(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
