@@ -178,8 +178,13 @@ def main(device):
         
         if (i + 1) % (TRANSITIONS//100) == 0:
             rewards = evaluate_policy(dqn, 5)
+            best_mean = -np.inf
             print(f"Step: {i+1}, Reward mean: {np.mean(rewards)}, Reward std: {np.std(rewards)}")
-            dqn.save()
+            if mean_reward > best_mean and np.std(rewards) < 50:
+                print("New best")
+                dqn.save()
+                best_mean = mean_reward
+            # dqn.save()
 
 if __name__ == "__main__":
     main(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
