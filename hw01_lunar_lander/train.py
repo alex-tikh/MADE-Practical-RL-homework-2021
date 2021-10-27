@@ -32,9 +32,13 @@ class DQN:
         
         self.model = nn.Sequential(
             nn.Linear(state_dim, 2*HIDDEN_DIM),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(2*HIDDEN_DIM, HIDDEN_DIM),
-            nn.ReLU(), 
+            nn.LeakyReLU(), 
+            nn.Linear(HIDDEN_DIM, HIDDEN_DIM),
+            nn.LeakyReLU(),
+            nn.Linear(HIDDEN_DIM, HIDDEN_DIM),
+            nn.LeakyReLU(),          
             nn.Linear(HIDDEN_DIM, action_dim)
         ).to(self.device)
         
@@ -120,8 +124,8 @@ class DQN:
             self.update_target_network()
         self.steps += 1
 
-    def save(self):
-        torch.save(self.model, "agent.pkl")
+    def save(self, model_path="agent.pkl"):
+        torch.save(self.model, model_path)
 
 
 def evaluate_policy(agent, episodes=5):
@@ -176,7 +180,11 @@ def main(device):
         
         if (i + 1) % (TRANSITIONS//100) == 0:
             rewards = evaluate_policy(dqn, 5)
+            best = -np.inf
             print(f"Step: {i+1}, Reward mean: {np.mean(rewards)}, Reward std: {np.std(rewards)}")
+            	if np.mean(rewards) > 200 and np.std(rewards) < 30 and np.mean(rewards) > best:
+            		dqn.save(model_path="best_agent.pkl")
+            		best = np.mean(rewards)
             dqn.save()
 
 if __name__ == "__main__":
