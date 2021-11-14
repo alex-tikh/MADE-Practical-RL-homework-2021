@@ -79,7 +79,7 @@ class Actor(nn.Module):
         dist = Normal(mu, sigma)
         action = dist.sample()
         tanh_action = torch.tanh(action)
-        return tanh_action, action, dis
+        return tanh_action, action, dist
         
         
 class Critic(nn.Module):
