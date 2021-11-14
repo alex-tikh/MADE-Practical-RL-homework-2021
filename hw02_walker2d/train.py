@@ -190,7 +190,7 @@ def sample_episode(env, agent):
         s = ns
     return compute_lambda_returns_and_gae(trajectory)
 
-if __name__ == "__main__":
+def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     env = make(ENV_NAME)
     ppo = PPO(
@@ -219,3 +219,7 @@ if __name__ == "__main__":
             rewards = evaluate_policy(env, ppo, 5)
             print(f"Step: {i+1}, Reward mean: {np.mean(rewards)}, Reward std: {np.std(rewards)}, Episodes: {episodes_sampled}, Steps: {steps_sampled}")
             ppo.save()
+
+
+if __name__ == "__main__":
+    main()
