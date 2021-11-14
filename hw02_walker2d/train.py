@@ -196,7 +196,7 @@ if __name__ == "__main__":
     ppo = PPO(
         state_dim=env.observation_space.shape[0],
         action_dim=env.action_space.shape[0],
-        device
+        device=device
     )
     state = env.reset()
     episodes_sampled = 0
