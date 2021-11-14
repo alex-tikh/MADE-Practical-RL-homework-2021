@@ -129,7 +129,7 @@ class PPO:
             proba, dist = self.actor.compute_proba(s, a)
             ratio = torch.exp(torch.log(proba + 1e-10) - torch.log(op + 1e-10))
             clip1 = ratio * adv
-            clip2 = torch.clamp(ratiom, 1 - self.clip, 1 + self.clip) * adv
+            clip2 = torch.clamp(ratio, 1 - self.clip, 1 + self.clip) * adv
             actor_loss = -torch.mean(torch.min(clip1, clip2))
             
             entropy = dist.entropy().mean()
