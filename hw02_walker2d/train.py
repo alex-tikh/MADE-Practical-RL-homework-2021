@@ -160,8 +160,8 @@ class PPO:
             prob = torch.exp(distr.log_prob(pure_action).sum(-1))
         return action.cpu().numpy()[0], pure_action.cpu().numpy()[0], prob.cpu().item()
 
-    def save(self, model_path="agent.pkl"):
-        torch.save(self.actor, model_path)
+    def save(self, model_path="agent.pt"):
+        torch.save(self.actor.state_dict(), model_path)
 
 
 def evaluate_policy(env, agent, episodes=5):
@@ -221,7 +221,7 @@ def main():
             rewards = evaluate_policy(env, ppo, 5)
             print(f"Step: {i+1}, Reward mean: {np.mean(rewards)}, Reward std: {np.std(rewards)}, Episodes: {episodes_sampled}, Steps: {steps_sampled}")
             if np.mean(rewards) > 1200 and np.std(rewards) < 30 and np.mean(rewards) > best:
-                ppo.save(model_path="best_agent.pkl")
+                ppo.save(model_path="best_agent.pt")
                 best = np.mean(rewards)
             ppo.save()
 
