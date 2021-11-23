@@ -18,6 +18,10 @@ BATCH_SIZE = 128
 ENV_NAME = "AntBulletEnv-v0"
 TRANSITIONS = 1000000
 
+EPSILON_NOISE = 0.05
+NOISE_CLIP = 0.2
+SEED = 42
+
 def soft_update(target, source):
     for tp, sp in zip(target.parameters(), source.parameters()):
         tp.data.copy_((1 - TAU) * tp.data + TAU * sp.data)
@@ -83,8 +87,32 @@ class TD3:
             done = torch.tensor(np.array(done), device=DEVICE, dtype=torch.float)
             
             # Update critic
+            with torch.no_grad():
+                target_action = self.target_actor(next_state)
+                noise = (torch.randn_like(action) * EPSILON_NOISE).clip(-NOISE_CLIP, NOISE_CLIP)
+                target_action = (target_action + noise).clip(-1, 1)
+                q1_next = self.target_critic_1(next_state, target_action)
+                q2_next = self.target_critic_2(next_state, target_action)
+                q_clipped = reward + GAMMA * (1 - done) * torch.min(q1_next, q2_next)
+            
+            q1 = self.critic_1(state, action)
+            q2 = self.critic_2(state, action)
+            loss1 = F.mse_loss(q1, q_clipped)
+            loss2 = F.mse_loss(q2, q_clipped)
+            
+            self.critic_1_optim.zero_grad()
+            loss1.backward()
+            self.critic_1_optim.step()
+            
+            self.critic_2_optim.zero_grad()
+            loss2.backward()
+            self.critic_2_optim.step()
             
             # Update actor
+            actor_loss = -self.critic1(state, self.actor(state)).mean()
+            self.actor_optim.zero_grad()
+            actor_loss.backward()
+            self.actor_optim.step()
             
             soft_update(self.target_critic_1, self.critic_1)
             soft_update(self.target_critic_2, self.critic_2)
@@ -95,8 +123,8 @@ class TD3:
             state = torch.tensor(np.array([state]), dtype=torch.float, device=DEVICE)
             return self.actor(state).cpu().numpy()[0]
 
-    def save(self):
-        torch.save(self.actor, "agent.pkl")
+    def save(self, model_path="agent.pt"):
+        torch.save(self.actor.state_dict(), model_path)
 
 
 def evaluate_policy(env, agent, episodes=5):
@@ -112,14 +140,24 @@ def evaluate_policy(env, agent, episodes=5):
         returns.append(total_reward)
     return returns
 
-if __name__ == "__main__":
+def main():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     env = make(ENV_NAME)
     test_env = make(ENV_NAME)
+    
+    env.seed(SEED)
+    test_env.seed(SEED)
+    random.seed(SEED)
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    
     td3 = TD3(state_dim=env.observation_space.shape[0], action_dim=env.action_space.shape[0])
     state = env.reset()
     episodes_sampled = 0
     steps_sampled = 0
     eps = 0.2
+    
+    best = -np.inf
     
     for i in range(TRANSITIONS):
         steps = 0
@@ -136,4 +174,11 @@ if __name__ == "__main__":
         if (i + 1) % (TRANSITIONS//100) == 0:
             rewards = evaluate_policy(test_env, td3, 5)
             print(f"Step: {i+1}, Reward mean: {np.mean(rewards)}, Reward std: {np.std(rewards)}")
+            if np.mean(rewards) > 2400 and np.std(rewards) < 300 and np.mean(rewards) > best:
+                td3.save(model_path="best_agent.pt")
+                best = np.mean(rewards)
             td3.save()
+
+            
+if __name__ == "__main__":
+    main()
