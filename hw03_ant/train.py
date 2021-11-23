@@ -109,7 +109,7 @@ class TD3:
             self.critic_2_optim.step()
             
             # Update actor
-            actor_loss = -self.critic1(state, self.actor(state)).mean()
+            actor_loss = -self.critic_1(state, self.actor(state)).mean()
             self.actor_optim.zero_grad()
             actor_loss.backward()
             self.actor_optim.step()
