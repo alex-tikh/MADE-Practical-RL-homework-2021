@@ -67,8 +67,8 @@ class TD3:
         self.critic_2 = Critic(state_dim, action_dim).to(DEVICE)
         
         self.actor_optim = Adam(self.actor.parameters(), lr=ACTOR_LR)
-        self.critic_1_optim = Adam(self.critic_1.parameters(), lr=ACTOR_LR)
-        self.critic_2_optim = Adam(self.critic_2.parameters(), lr=ACTOR_LR)
+        self.critic_1_optim = Adam(self.critic_1.parameters(), lr=CRITIC_LR)
+        self.critic_2_optim = Adam(self.critic_2.parameters(), lr=CRITIC_LR)
         
         self.target_actor = copy.deepcopy(self.actor)
         self.target_critic_1 = copy.deepcopy(self.critic_1)
