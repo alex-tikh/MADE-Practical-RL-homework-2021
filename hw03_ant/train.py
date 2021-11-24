@@ -18,6 +18,7 @@ BATCH_SIZE = 128
 ENV_NAME = "AntBulletEnv-v0"
 TRANSITIONS = 1000000
 
+HIDDEN_DIM = 128
 EPSILON_NOISE = 0.05
 NOISE_CLIP = 0.2
 SEED = 42
@@ -30,11 +31,13 @@ class Actor(nn.Module):
     def __init__(self, state_dim, action_dim):
         super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(state_dim, 256),
+            nn.Linear(state_dim, 2*HIDDEN_DIM),
             nn.ELU(),
-            nn.Linear(256, 256),
+            nn.Linear(2*HIDDEN_DIM, HIDDEN_DIM),
             nn.ELU(),
-            nn.Linear(256, action_dim),
+            nn.Linear(HIDDEN_DIM, HIDDEN_DIM),
+            nn.ELU(),
+            nn.Linear(HIDDEN_DIM, action_dim)
             nn.Tanh()
         )
         

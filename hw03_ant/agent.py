@@ -34,8 +34,8 @@ class Agent:
         # self.model = torch.load(__file__[:-8] + "/agent.pkl").to(self.device)
         self.model = Actor(
                 state_dim=28,
-                action_dim=8,
-                device=self.device)
+                action_dim=8
+        )
         self.model.load_state_dict(torch.load(__file__[:-8] + "/agent.pt"))
         self.model.to(self.device)
         self.model.eval()
