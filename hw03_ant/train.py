@@ -37,7 +37,7 @@ class Actor(nn.Module):
             nn.ELU(),
             nn.Linear(HIDDEN_DIM, HIDDEN_DIM),
             nn.ELU(),
-            nn.Linear(HIDDEN_DIM, action_dim)
+            nn.Linear(HIDDEN_DIM, action_dim),
             nn.Tanh()
         )
         
