@@ -9,16 +9,19 @@ random.seed(42)
 np.random.seed(42)
 torch.manual_seed(42)
 
+HIDDEN_DIM = 256
 
 class Actor(nn.Module):
     def __init__(self, state_dim, action_dim):
         super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(state_dim, 256),
+            nn.Linear(state_dim, 2*HIDDEN_DIM),
             nn.ELU(),
-            nn.Linear(256, 256),
+            nn.Linear(2*HIDDEN_DIM, HIDDEN_DIM),
             nn.ELU(),
-            nn.Linear(256, action_dim),
+            nn.Linear(HIDDEN_DIM, HIDDEN_DIM),
+            nn.ELU(),
+            nn.Linear(HIDDEN_DIM, action_dim),
             nn.Tanh()
         )
         

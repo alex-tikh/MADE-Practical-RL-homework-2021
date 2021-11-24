@@ -18,9 +18,11 @@ BATCH_SIZE = 128
 ENV_NAME = "AntBulletEnv-v0"
 TRANSITIONS = 1000000
 
+EPS = 0.2
 HIDDEN_DIM = 128
 EPSILON_NOISE = 0.05
 NOISE_CLIP = 0.2
+DELAY = 4
 SEED = 42
 
 def soft_update(target, source):
@@ -75,10 +77,14 @@ class TD3:
         self.target_critic_2 = copy.deepcopy(self.critic_2)
         
         self.replay_buffer = deque(maxlen=200000)
+        
+        self.iter = 0
 
     def update(self, transition):
         self.replay_buffer.append(transition)
         if len(self.replay_buffer) > BATCH_SIZE * 16:
+            
+            self.iter += 1
             
             # Sample batch
             transitions = [self.replay_buffer[random.randint(0, len(self.replay_buffer)-1)] for _ in range(BATCH_SIZE)]
@@ -92,8 +98,8 @@ class TD3:
             # Update critic
             with torch.no_grad():
                 target_action = self.target_actor(next_state)
-                noise = (torch.randn_like(action) * EPSILON_NOISE).clip(-NOISE_CLIP, NOISE_CLIP)
-                target_action = (target_action + noise).clip(-1, 1)
+                noise = (torch.randn_like(action) * EPSILON_NOISE).clamp(-NOISE_CLIP, NOISE_CLIP)
+                target_action = (target_action + noise).clamp(-1, 1)
                 q1_next = self.target_critic_1(next_state, target_action)
                 q2_next = self.target_critic_2(next_state, target_action)
                 q_clipped = reward + GAMMA * (1 - done) * torch.min(q1_next, q2_next)
@@ -112,14 +118,16 @@ class TD3:
             self.critic_2_optim.step()
             
             # Update actor
-            actor_loss = -self.critic_1(state, self.actor(state)).mean()
-            self.actor_optim.zero_grad()
-            actor_loss.backward()
-            self.actor_optim.step()
-            
-            soft_update(self.target_critic_1, self.critic_1)
-            soft_update(self.target_critic_2, self.critic_2)
-            soft_update(self.target_actor, self.actor)
+            # Delayed policy updates
+            if self.iter % DELAY == 0:
+                actor_loss = -self.critic_1(state, self.actor(state)).mean()
+                self.actor_optim.zero_grad()
+                actor_loss.backward()
+                self.actor_optim.step()
+
+                soft_update(self.target_critic_1, self.critic_1)
+                soft_update(self.target_critic_2, self.critic_2)
+                soft_update(self.target_actor, self.actor)
 
     def act(self, state):
         with torch.no_grad():
@@ -158,7 +166,6 @@ def main():
     state = env.reset()
     episodes_sampled = 0
     steps_sampled = 0
-    eps = 0.2
     
     best = -np.inf
     
@@ -167,7 +174,7 @@ def main():
         
         #Epsilon-greedy policy
         action = td3.act(state)
-        action = np.clip(action + eps * np.random.randn(*action.shape), -1, +1)
+        action = np.clip(action + EPS * np.random.randn(*action.shape), -1, +1)
 
         next_state, reward, done, _ = env.step(action)
         td3.update((state, action, next_state, reward, done))
